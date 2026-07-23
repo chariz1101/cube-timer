@@ -1,4 +1,6 @@
 import { create } from "zustand";
+import { db } from "../db/db";
+import { generateScramble, DEFAULT_EVENT_ID } from "../lib/scramble";
 
 /**
  * Timer lifecycle:
@@ -46,7 +48,11 @@ interface TimerState {
    */
   startSolve: () => void;
 
-  /** running → stopped. Freezes elapsedMs at the final solve time. */
+  /**
+   * running → stopped. Freezes elapsedMs at the final solve time, saves
+   * the completed solve to Dexie (with the scramble that was used), and
+   * kicks off generation of the next scramble.
+   */
   stopSolve: () => void;
 
   /**
@@ -91,12 +97,38 @@ export const useTimerStore = create<TimerState>((set, get) => ({
   },
 
   stopSolve: () => {
-    const { phase, solveStartedAt } = get();
+    const { phase, solveStartedAt, scramble } = get();
     if (phase !== "running" || solveStartedAt === null) return;
-    set({
-      phase: "stopped",
-      elapsedMs: Date.now() - solveStartedAt,
-    });
+
+    const elapsedMs = Date.now() - solveStartedAt;
+    set({ phase: "stopped", elapsedMs });
+
+    // Save the completed solve and line up the next scramble. Neither
+    // needs to block the UI, and a failure in one shouldn't stop the
+    // other from completing.
+    void (async () => {
+      const [saveResult, scrambleResult] = await Promise.allSettled([
+        db.solves.add({
+          time: elapsedMs,
+          scramble,
+          event: DEFAULT_EVENT_ID,
+          date: Date.now(),
+          penalty: null,
+          synced: false,
+        }),
+        generateScramble(DEFAULT_EVENT_ID),
+      ]);
+
+      if (saveResult.status === "rejected") {
+        console.error("Failed to save solve:", saveResult.reason);
+      }
+
+      if (scrambleResult.status === "fulfilled") {
+        set({ scramble: scrambleResult.value });
+      } else {
+        console.error("Failed to generate next scramble:", scrambleResult.reason);
+      }
+    })();
   },
 
   tick: () => {
