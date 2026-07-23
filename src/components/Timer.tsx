@@ -154,12 +154,6 @@ export default function Timer() {
       onTouchEnd={onTouchEnd}
       className="flex flex-col items-center justify-center select-none touch-none py-16"
     >
-      {phase !== "running" && (
-        <div className="mb-8 max-w-2xl text-center font-mono text-lg sm:text-xl tracking-wide text-gray-700 dark:text-gray-300">
-          {scramble || "Generating scramble…"}
-        </div>
-      )}
-
       <div
         className={`font-mono font-bold text-7xl sm:text-8xl md:text-9xl tabular-nums transition-colors duration-150 ${colorClass}`}
       >
