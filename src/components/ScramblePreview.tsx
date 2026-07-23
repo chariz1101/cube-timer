@@ -61,11 +61,16 @@ export default function ScramblePreview({ scramble, className }: ScramblePreview
   }, [scramble]);
 
   return (
-    <div
-      ref={containerRef}
-      role="img"
-      aria-label={scramble ? `Scrambled cube preview for: ${scramble}` : "Scramble preview loading"}
-      className={`mx-auto h-40 w-full max-w-xs sm:h-52 sm:max-w-sm ${className ?? ""}`}
-    />
+    <div className={`flex flex-col items-center gap-3 ${className ?? ""}`}>
+      <div
+        ref={containerRef}
+        role="img"
+        aria-label={scramble ? `Scrambled cube preview for: ${scramble}` : "Scramble preview loading"}
+        className="mx-auto h-40 w-full max-w-xs sm:h-52 sm:max-w-sm"
+      />
+      <p className="max-w-2xl text-center font-mono text-base tracking-wide text-gray-700 dark:text-gray-300 sm:text-lg">
+        {scramble || "Generating scramble…"}
+      </p>
+    </div>
   );
 }
