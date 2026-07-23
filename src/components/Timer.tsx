@@ -37,23 +37,16 @@ export default function Timer() {
     }
   }, [setScramble]);
 
-  // Seed the very first scramble on mount.
+  // Seed the very first scramble on mount (cold start — the store starts
+  // with an empty scramble). After that, the store itself generates each
+  // subsequent scramble as part of stopSolve(), so no further refresh is
+  // needed here.
   useEffect(() => {
-    void refreshScramble();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
-
-  // Pre-fetch the next scramble as soon as a solve finishes, rather than
-  // waiting for `phase` to pass through "idle" — pressing again from
-  // "stopped" resets and re-arms inspection in the same event handler,
-  // so React may batch straight past an "idle" render and never fire an
-  // effect keyed on it. Refreshing here guarantees the next scramble is
-  // ready before the user starts their next inspection.
-  useEffect(() => {
-    if (phase === "stopped") {
+    if (!scramble) {
       void refreshScramble();
     }
-  }, [phase, refreshScramble]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   // Drive the visible clock. requestAnimationFrame gives smoother output
   // than the ~30ms the spec calls for, at negligible cost.
