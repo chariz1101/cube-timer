@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useTimerStore } from "../store/timerStore";
-import { formatTime } from "../lib/format.ts";
+import { formatTime } from "../lib/format";
+import { generateScramble } from "../lib/scramble";
 
 /** WCA-style inspection window. Set to 0 to disable the countdown UI. */
 const INSPECTION_DURATION_MS = 15_000;
@@ -14,6 +15,8 @@ export default function Timer() {
   const stopSolve = useTimerStore((s) => s.stopSolve);
   const tick = useTimerStore((s) => s.tick);
   const reset = useTimerStore((s) => s.reset);
+  const scramble = useTimerStore((s) => s.scramble);
+  const setScramble = useTimerStore((s) => s.setScramble);
 
   // Local display-only countdown; the store doesn't need to know about it.
   const [inspectionMsLeft, setInspectionMsLeft] = useState(INSPECTION_DURATION_MS);
@@ -22,6 +25,35 @@ export default function Timer() {
   // Guards against keydown auto-repeat and duplicate touch events firing
   // startInspection()/stopSolve() more than once per physical press.
   const isPressedRef = useRef(false);
+
+  const refreshScramble = useCallback(async () => {
+    try {
+      const next = await generateScramble();
+      setScramble(next);
+    } catch (err) {
+      // Keep the previous scramble visible rather than clearing it, and
+      // let the user know generation failed so they don't solve blind.
+      console.error("Failed to generate scramble:", err);
+    }
+  }, [setScramble]);
+
+  // Seed the very first scramble on mount.
+  useEffect(() => {
+    void refreshScramble();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // Pre-fetch the next scramble as soon as a solve finishes, rather than
+  // waiting for `phase` to pass through "idle" — pressing again from
+  // "stopped" resets and re-arms inspection in the same event handler,
+  // so React may batch straight past an "idle" render and never fire an
+  // effect keyed on it. Refreshing here guarantees the next scramble is
+  // ready before the user starts their next inspection.
+  useEffect(() => {
+    if (phase === "stopped") {
+      void refreshScramble();
+    }
+  }, [phase, refreshScramble]);
 
   // Drive the visible clock. requestAnimationFrame gives smoother output
   // than the ~30ms the spec calls for, at negligible cost.
@@ -129,6 +161,12 @@ export default function Timer() {
       onTouchEnd={onTouchEnd}
       className="flex flex-col items-center justify-center select-none touch-none py-16"
     >
+      {phase !== "running" && (
+        <div className="mb-8 max-w-2xl text-center font-mono text-lg sm:text-xl tracking-wide text-gray-700 dark:text-gray-300">
+          {scramble || "Generating scramble…"}
+        </div>
+      )}
+
       <div
         className={`font-mono font-bold text-7xl sm:text-8xl md:text-9xl tabular-nums transition-colors duration-150 ${colorClass}`}
       >
