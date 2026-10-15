@@ -1,12 +1,14 @@
 import Dexie, { type Table } from "dexie";
 
+export type Penalty = "+2" | "DNF";
+
 export interface Solve {
   id?: number;
   time: number;        // milliseconds
   scramble: string;
   event: string;        // e.g. "333"
   date: number;          // timestamp
-  penalty?: "+2" | "DNF" | null;
+  penalty?: Penalty | null;
   synced?: boolean;      // for Supabase sync tracking
 }
 

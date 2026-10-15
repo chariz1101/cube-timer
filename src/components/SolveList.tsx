@@ -1,6 +1,6 @@
 import { useLiveQuery } from "dexie-react-hooks";
-import { db, type Solve } from "../db/db";
-import { formatTime } from "../lib/format";
+import { db, type Penalty, type Solve } from "../db/db";
+import { formatSolveTime } from "../lib/format";
 
 interface SolveListProps {
   /** Max number of recent solves to show. */
@@ -30,7 +30,7 @@ export default function SolveList({ limit = 50, className }: SolveListProps) {
     }
   };
 
-  const handleTogglePenalty = async (solve: Solve, penalty: "+2" | "DNF") => {
+  const handleTogglePenalty = async (solve: Solve, penalty: Penalty) => {
     if (solve.id === undefined) return;
     // Clicking an already-active penalty clears it; the two penalty
     // types are mutually exclusive, matching standard WCA scorecards.
@@ -74,7 +74,7 @@ export default function SolveList({ limit = 50, className }: SolveListProps) {
                   : "text-gray-900 dark:text-gray-100"
               }`}
             >
-              {getDisplayTime(solve)}
+              {formatSolveTime(solve.time, solve.penalty)}
             </span>
             <span
               className="truncate text-xs text-gray-400 dark:text-gray-500"
@@ -124,16 +124,4 @@ export default function SolveList({ limit = 50, className }: SolveListProps) {
       ))}
     </ul>
   );
-}
-
-/**
- * Formats a solve's displayed time per standard WCA-style convention:
- * - DNF shows "DNF (raw time)" so the underlying time isn't lost.
- * - +2 shows the adjusted time with a trailing "+".
- * - No penalty shows the plain time.
- */
-function getDisplayTime(solve: Solve): string {
-  if (solve.penalty === "DNF") return `DNF (${formatTime(solve.time)})`;
-  if (solve.penalty === "+2") return `${formatTime(solve.time + 2000)}+`;
-  return formatTime(solve.time);
 }
