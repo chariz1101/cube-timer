@@ -96,7 +96,8 @@ npm run preview
 ```
 cube-timer/
 ├── docs/
-│   └── BUILD_GUIDE.md      # Step-by-step build guide (3-day plan)
+│   ├── BUILD_GUIDE.md      # Step-by-step build guide (3-day plan)
+│   └── DEVELOPER_GUIDE.md  # Architecture, state, data, and troubleshooting
 ├── src/
 │   ├── components/         # React components (Timer, ScramblePreview, Stats, etc.)
 │   ├── store/               # Zustand stores
